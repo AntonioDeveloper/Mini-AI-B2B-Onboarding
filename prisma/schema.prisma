@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum CompanyStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Company {
+  id                String              @id @default(cuid())
+  legalName         String
+  tradeName         String
+  cnpj              String              @unique
+  email             String
+  phone             String
+  status            CompanyStatus       @default(PENDING)
+  addressFiscalJson Json
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  validations       CompanyValidation[]
+  auditLogs         AuditLog[]
+}
+
+model CompanyValidation {
+  id              String    @id @default(cuid())
+  companyId       String
+  payloadJson     Json
+  divergencesJson Json
+  riskLevel       RiskLevel
+  createdAt       DateTime  @default(now())
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, createdAt])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  companyId    String
+  action       String
+  metadataJson Json?
+  createdAt    DateTime @default(now())
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, createdAt])
+}
